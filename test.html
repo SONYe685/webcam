@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webカメラ画像処理デモ</title>
+    <title>瞳孔検出デモ</title>
 </head>
 <body>
-    <h1>Webカメラを使ったリアルタイム画像処理</h1>
+    <h1>Webカメラを使った瞳孔検出</h1>
     <video id="video" autoplay></video>
     <canvas id="canvas"></canvas>
-
+    <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
     <script src="script.js"></script>
 </body>
 </html>
