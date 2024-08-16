@@ -1,9 +1,8 @@
-window.onload = function() {
+function onOpenCvReady() {
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    // Webカメラの映像を取得
     navigator.mediaDevices.getUserMedia({ video: true })
         .then(function(stream) {
             video.srcObject = stream;
@@ -13,35 +12,40 @@ window.onload = function() {
             console.error("Webカメラのアクセスに失敗しました: ", err);
         });
 
-    // 映像を描画し、画像処理を行う
     video.addEventListener('play', function() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+
+        const src = new cv.Mat(video.videoHeight, video.videoWidth, cv.CV_8UC4);
+        const gray = new cv.Mat();
+        const circles = new cv.Mat();
 
         function processFrame() {
             if (video.paused || video.ended) {
                 return;
             }
 
-            // Webカメラの映像をcanvasに描画
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // 画像データを取得
             let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let data = imageData.data;
+            src.data.set(imageData.data);
 
-            // グレースケール処理
-            for (let i = 0; i < data.length; i += 4) {
-                let r = data[i];
-                let g = data[i + 1];
-                let b = data[i + 2];
-                let gray = 0.3 * r + 0.59 * g + 0.11 * b;
+            // グレースケールに変換
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-                data[i] = data[i + 1] = data[i + 2] = gray;
+            // 瞳孔を検出
+            cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, gray.rows / 8, 100, 30, 0, 0);
+
+            // 検出された円を描画
+            for (let i = 0; i < circles.cols; ++i) {
+                let x = circles.data32F[i * 3];
+                let y = circles.data32F[i * 3 + 1];
+                let radius = circles.data32F[i * 3 + 2];
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 3;
+                ctx.stroke();
             }
-
-            // 処理した画像をcanvasに戻す
-            ctx.putImageData(imageData, 0, 0);
 
             // 次のフレームを処理
             requestAnimationFrame(processFrame);
